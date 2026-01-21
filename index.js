@@ -18,7 +18,16 @@ const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key_12345";
 
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000",
+      "https://your-frontend.vercel.app"
+    ],
+    credentials: true
+  })
+);
+
 app.use(bodyParser.json());
 
 /* =====================================================
