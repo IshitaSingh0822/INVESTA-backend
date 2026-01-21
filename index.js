@@ -22,7 +22,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:3000",
-      "https://your-frontend.vercel.app"
+     https://investa-lilac.vercel.app
     ],
     credentials: true
   })
