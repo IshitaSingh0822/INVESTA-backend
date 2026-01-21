@@ -18,12 +18,17 @@ const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key_12345";
 
 const app = express();
 
+/* =====================================================
+   🌍 CORS CONFIG (FIXED)
+   ===================================================== */
 app.use(
   cors({
     origin: [
       "http://localhost:3000",
-     https://investa-lilac.vercel.app
+      "https://investa-lilac.vercel.app"
     ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true
   })
 );
@@ -31,9 +36,15 @@ app.use(
 app.use(bodyParser.json());
 
 /* =====================================================
+   ✅ ROOT ROUTE (VERY IMPORTANT)
+   ===================================================== */
+app.get("/", (req, res) => {
+  res.status(200).send("🚀 INVESTA Backend is running!");
+});
+
+/* =====================================================
    🔌 MONGODB CONNECTION (Vercel-safe)
    ===================================================== */
-// IMPORTANT: prevent multiple connections on every request
 let isConnected = false;
 
 const connectDB = async () => {
@@ -44,21 +55,23 @@ const connectDB = async () => {
     console.log("✅ MongoDB connected!");
   } catch (err) {
     console.error("❌ MongoDB error:", err);
+    throw err;
   }
 };
 
-// Ensure DB connection for every request
 app.use(async (req, res, next) => {
-  await connectDB();
-  next();
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    res.status(500).json({ message: "Database connection failed" });
+  }
 });
 
 /* =====================================================
    SIGNUP ROUTE
    ===================================================== */
 app.post("/signup", async (req, res) => {
-  console.log("📝 Signup request:", req.body);
-
   try {
     const { name, email, phone, password } = req.body;
 
@@ -66,7 +79,7 @@ app.post("/signup", async (req, res) => {
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: "Email already registered",
+        message: "Email already registered"
       });
     }
 
@@ -77,19 +90,19 @@ app.post("/signup", async (req, res) => {
       name,
       email,
       phone,
-      password: hashedPassword,
+      password: hashedPassword
     });
 
     await newUser.save();
 
     res.status(201).json({
       success: true,
-      message: "Account created successfully!",
+      message: "Account created successfully!"
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Server error: " + error.message,
+      message: "Server error: " + error.message
     });
   }
 });
@@ -105,7 +118,7 @@ app.post("/login", async (req, res) => {
     if (!user) {
       return res.status(400).json({
         success: false,
-        message: "Invalid email or password",
+        message: "Invalid email or password"
       });
     }
 
@@ -113,7 +126,7 @@ app.post("/login", async (req, res) => {
     if (!isPasswordValid) {
       return res.status(400).json({
         success: false,
-        message: "Invalid email or password",
+        message: "Invalid email or password"
       });
     }
 
@@ -131,13 +144,13 @@ app.post("/login", async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        phone: user.phone,
-      },
+        phone: user.phone
+      }
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Server error: " + error.message,
+      message: "Server error: " + error.message
     });
   }
 });
@@ -152,17 +165,17 @@ const authMiddleware = (req, res, next) => {
     if (!token) {
       return res.status(401).json({
         success: false,
-        message: "No token, authorization denied",
+        message: "No token, authorization denied"
       });
     }
 
     const decoded = jwt.verify(token, JWT_SECRET);
     req.user = decoded;
     next();
-  } catch (error) {
+  } catch {
     res.status(401).json({
       success: false,
-      message: "Token is not valid",
+      message: "Token is not valid"
     });
   }
 };
@@ -185,7 +198,7 @@ app.post("/newOrder", authMiddleware, async (req, res) => {
     name: req.body.name,
     qty: req.body.qty,
     price: req.body.price,
-    mode: req.body.mode,
+    mode: req.body.mode
   });
 
   await newOrder.save();
@@ -195,7 +208,6 @@ app.post("/newOrder", authMiddleware, async (req, res) => {
 /* =====================================================
    🚫 DO NOT START SERVER ON VERCEL
    ===================================================== */
-// ❌ COMMENTED FOR VERCEL
 // app.listen(PORT, () => {
 //   console.log("🚀 Server started on port " + PORT);
 // });
